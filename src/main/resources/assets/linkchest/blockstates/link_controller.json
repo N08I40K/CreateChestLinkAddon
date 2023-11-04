@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "linkchest:block/link_controller" }
+  }
+}

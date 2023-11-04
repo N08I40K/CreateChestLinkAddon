@@ -6,8 +6,8 @@ plugins {
 }
 
 version = mod_version
-group = 'com.example.examplemod' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "examplemod-${artifact_minecraft_version}"
+group = 'ru.n08i40k.linkchest' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = "linkchest-${artifact_minecraft_version}"
 
 // Mojang ships Java 17 to end users in 1.18+, so your mod should target Java 17.
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
@@ -37,7 +37,7 @@ minecraft {
         client {
             workingDirectory project.file('run')
 
-            arg '-mixin.config=examplemod.mixins.json'
+            arg '-mixin.config=linkchest.mixins.json'
 
             // Recommended logging data for a userdev environment
             // The markers can be added/remove as needed separated by commas.
@@ -52,10 +52,10 @@ minecraft {
             property 'forge.logging.console.level', 'debug'
 
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
-            property 'forge.enabledGameTestNamespaces', 'examplemod'
+            property 'forge.enabledGameTestNamespaces', 'linkchest'
 
             mods {
-                examplemod {
+                linkchest {
                     source sourceSets.main
                 }
             }
@@ -64,17 +64,17 @@ minecraft {
         server {
             workingDirectory project.file('run')
 
-            arg '-mixin.config=examplemod.mixins.json'
+            arg '-mixin.config=linkchest.mixins.json'
 
             property 'forge.logging.markers', 'REGISTRIES'
 
             property 'forge.logging.console.level', 'debug'
 
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
-            property 'forge.enabledGameTestNamespaces', 'examplemod'
+            property 'forge.enabledGameTestNamespaces', 'linkchest'
 
             mods {
-                examplemod {
+                linkchest {
                     source sourceSets.main
                 }
             }
@@ -88,10 +88,10 @@ minecraft {
             property 'forge.logging.console.level', 'debug'
 
             // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
-            args '--mod', 'examplemod', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+            args '--mod', 'linkchest', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
 
             mods {
-                examplemod {
+                linkchest {
                     source sourceSets.main
                 }
             }
@@ -162,8 +162,8 @@ dependencies {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 mixin {
-    add sourceSets.main, 'examplemod.refmap.json'
-    config 'examplemod.mixins.json'
+    add sourceSets.main, 'linkchest.refmap.json'
+    config 'linkchest.mixins.json'
 
     debug.verbose = true
     debug.export = true
@@ -174,14 +174,14 @@ mixin {
 jar {
     manifest {
         attributes([
-                "Specification-Title"     : "examplemod",
-                "Specification-Vendor"    : "examplemodsareus",
+                "Specification-Title"     : "linkchest",
+                "Specification-Vendor"    : "linkchestsareus",
                 "Specification-Version"   : "1", // We are version 1 of ourselves
                 "Implementation-Title"    : project.name,
                 "Implementation-Version"  : project.jar.archiveVersion,
-                "Implementation-Vendor"   : "examplemodsareus",
+                "Implementation-Vendor"   : "linkchestsareus",
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-                'MixinConfigs': 'examplemod.mixins.json'
+                'MixinConfigs': 'linkchest.mixins.json'
         ])
     }
 }
