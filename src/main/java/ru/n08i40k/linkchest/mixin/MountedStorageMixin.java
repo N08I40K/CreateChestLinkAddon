@@ -24,15 +24,16 @@ import java.util.UUID;
 @Mixin(MountedStorage.class)
 public class MountedStorageMixin implements IMountedStorage {
     @Unique
-    boolean isInventoryLinked = false;
-
-    @Unique
     private UUID linkedControllerUuid = null;
 
-    @Shadow(remap = false) private BlockEntity blockEntity;
+    @Shadow(remap = false)
+    private BlockEntity blockEntity;
 
     @Shadow(remap = false)
     ItemStackHandler handler;
+
+
+    // Interface functions
 
     public UUID getLinkedControllerUuid() {
         return linkedControllerUuid;
@@ -42,6 +43,7 @@ public class MountedStorageMixin implements IMountedStorage {
         this.linkedControllerUuid = uuid;
     }
 
+    private boolean hasLinkedControllerUuid() { return linkedControllerUuid != null; }
 
     @Override
     public void linkInventory() {
@@ -53,7 +55,6 @@ public class MountedStorageMixin implements IMountedStorage {
         for (LinkControllerBlockEntity linkControllerBlockEntity : LinkControllerBlockEntity.LOADED_CONTROLLERS) {
             if (linkControllerBlockEntity.getUuid().equals(linkedControllerUuid)) {
                 ((ItemStackHandlerAccessor)this.handler).setStacks(linkControllerBlockEntity.getInventory());
-                isInventoryLinked = true;
                 break;
             }
         }
@@ -63,7 +64,7 @@ public class MountedStorageMixin implements IMountedStorage {
     public void unlinkInventory(boolean removeFromList) {
         if (removeFromList)
             LOADED_STORAGES.remove(this);
-        isInventoryLinked = false;
+
         ((ItemStackHandlerAccessor)this.handler).setStacks(NonNullList.withSize(27, ItemStack.EMPTY));
     }
 
@@ -71,59 +72,75 @@ public class MountedStorageMixin implements IMountedStorage {
     public void unlinkController() {
         unlinkInventory(true);
 
-        linkedControllerUuid = null;
+        setLinkedControllerUuid(null);
     }
+
+
+    // Mixin functions
 
     @Inject(method = "serialize", at = @At("RETURN"), remap = false)
     public void mySerialize(CallbackInfoReturnable<CompoundTag> cir) {
         if (cir.getReturnValue() == null)
             return;
-        
-        CompoundTag nbt = cir.getReturnValue();
 
-        if (this.blockEntity instanceof IChestBlockEntity chestBlockEntity &&
-                linkedControllerUuid != null) {
-            nbt.putUUID("controller-uuid", linkedControllerUuid);
-        }
+        if (!(this.blockEntity instanceof ChestBlockEntity))
+            return;
+
+        if (!hasLinkedControllerUuid())
+            return;
+
+        CompoundTag nbt = cir.getReturnValue();
+        nbt.putUUID("controller-uuid", linkedControllerUuid);
     }
 
     @Inject(method = "deserialize", at = @At(value = "RETURN"), remap = false)
     private static void myDeserialize(CompoundTag nbt, CallbackInfoReturnable<MountedStorage> cir) {
         if (cir.getReturnValue() == null)
             return;
-        
+
+        if (!nbt.contains("controller-uuid"))
+            return;
         IMountedStorage storage = (IMountedStorage) cir.getReturnValue();
 
-        if (nbt.contains("controller-uuid")) {
-            storage.setLinkedControllerUuid(nbt.getUUID("controller-uuid"));
-            storage.linkInventory();
-        }
+        storage.setLinkedControllerUuid(nbt.getUUID("controller-uuid"));
+        storage.linkInventory();
     }
 
     @Inject(method = "addStorageToWorld", at = @At("HEAD"), remap = false)
     public void myAddStorageToWorldBefore(BlockEntity be, CallbackInfo ci) {
-        if (this.blockEntity instanceof IChestBlockEntity chestBlockEntity &&
-                linkedControllerUuid != null) {
-            unlinkInventory(true);
-        }
+        if (!(this.blockEntity instanceof ChestBlockEntity))
+            return;
+
+        if (!hasLinkedControllerUuid())
+            return;
+
+        unlinkInventory(true);
     }
 
     @Inject(method = "addStorageToWorld", at = @At("RETURN"), remap = false)
     public void myAddStorageToWorldAfter(BlockEntity be, CallbackInfo ci) {
-        if (this.blockEntity instanceof IChestBlockEntity chestBlockEntity &&
-                linkedControllerUuid != null) {
-            chestBlockEntity.setLinkedControllerUuid(linkedControllerUuid);
-            chestBlockEntity.linkInventory();
+        if (this.blockEntity instanceof ChestBlockEntity chestBlockEntity) {
+            if (!hasLinkedControllerUuid())
+                return;
+
+            IChestBlockEntity customChestBlockEntity = (IChestBlockEntity) chestBlockEntity;
+
+            customChestBlockEntity.setLinkedControllerUuid(linkedControllerUuid);
+            customChestBlockEntity.linkInventory();
         }
     }
 
     @Inject(method = "removeStorageFromWorld", at = @At("RETURN"), remap = false)
     public void myRemoveStorageFromWorld(CallbackInfo ci) {
-        if (this.blockEntity instanceof IChestBlockEntity chestBlockEntity) {
-            linkedControllerUuid = chestBlockEntity.getLinkedControllerUuid();
+        if (this.blockEntity instanceof ChestBlockEntity chestBlockEntity) {
+            IChestBlockEntity customChestBlockEntity = (IChestBlockEntity) chestBlockEntity;
 
-            chestBlockEntity.unlinkController();
+            if (!customChestBlockEntity.hasLinkedControllerUuid())
+                return;
 
+            linkedControllerUuid = customChestBlockEntity.getLinkedControllerUuid();
+
+            customChestBlockEntity.unlinkController();
             linkInventory();
         }
     }

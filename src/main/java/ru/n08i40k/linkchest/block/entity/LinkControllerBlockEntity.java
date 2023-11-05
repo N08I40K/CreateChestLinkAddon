@@ -35,13 +35,13 @@ public class LinkControllerBlockEntity extends RandomizableContainerBlockEntity 
     }
 
     public void unlinkAll(boolean isBreak) {
-//        System.out.println("Removing controller from list!");
+        if (!isLoaded)
+            return;
+        isLoaded = false;
 
         LOADED_CONTROLLERS.remove(this);
 
         // Remove chests
-
-//        System.out.println("Removing chests!");
 
         List<IChestBlockEntity> queueToRemoveChest = new ArrayList<>();
         for (IChestBlockEntity chestBlockEntity : IChestBlockEntity.LOADED_CHESTS) {
@@ -52,14 +52,12 @@ public class LinkControllerBlockEntity extends RandomizableContainerBlockEntity 
 
         for (IChestBlockEntity chestBlockEntity : queueToRemoveChest) {
             if (isBreak)
-                chestBlockEntity.unlinkInventory(false);
-            else
                 chestBlockEntity.unlinkController();
+            else
+                chestBlockEntity.unlinkInventory(false);
         }
 
         // Remove storages
-
-//        System.out.println("Removing storages!");
 
         List<IMountedStorage> queueToRemoveStorage = new ArrayList<>();
         for (IMountedStorage storage : IMountedStorage.LOADED_STORAGES) {
@@ -70,9 +68,9 @@ public class LinkControllerBlockEntity extends RandomizableContainerBlockEntity 
 
         for (IMountedStorage storage : queueToRemoveStorage) {
             if (isBreak)
-                storage.unlinkInventory(false);
-            else
                 storage.unlinkController();
+            else
+                storage.unlinkInventory(false);
         }
     }
 
@@ -113,18 +111,16 @@ public class LinkControllerBlockEntity extends RandomizableContainerBlockEntity 
     @Override
     public void onLoad() {
         if (getLevel() != null && getLevel().isClientSide()) return;
-//        System.out.println("Link Controller onLoad function");
+
         loadController();
     }
 
     public void load(CompoundTag pTag) {
-//        System.out.println("Link Controller LOAD");
         super.load(pTag);
         this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
         ContainerHelper.loadAllItems(pTag, this.items);
         uuid = pTag.getUUID("controller-uuid");
 
-//        System.out.println("Link Controller load function");
         loadController();
     }
 
@@ -132,30 +128,19 @@ public class LinkControllerBlockEntity extends RandomizableContainerBlockEntity 
         if (isLoaded) return;
         isLoaded = true;
 
-        if (uuid == null) {
-//            System.out.println("Link Controller has no uuid! Generating...");
+        if (uuid == null)
             uuid = UUID.randomUUID();
-        }
+
 
         if (getLevel() != null && getLevel().isClientSide()) return;
 
-//        System.out.println("Load has been called! (link controller)");
-
-        if (!LOADED_CONTROLLERS.contains(this)) {
-//            System.out.println("Added to loaded controllers!");
+        if (!LOADED_CONTROLLERS.contains(this))
             LOADED_CONTROLLERS.add(this);
-        } else {
-//            System.out.println("Already in loaded controllers!");
-        }
-
-//        System.out.println("Size of loaded chests: " + IChestBlockEntity.LOADED_CHESTS.size());
 
         IChestBlockEntity.LOADED_CHESTS.removeIf(Objects::isNull);
 
         for (IChestBlockEntity chestBlockEntity : IChestBlockEntity.LOADED_CHESTS) {
             if (chestBlockEntity.getLinkedControllerUuid().equals(uuid)) {
-//                System.out.println("Required chest has been founded!");
-//                System.out.println("Calling inventory link...");
                 chestBlockEntity.linkInventory();
             }
         }
@@ -180,12 +165,5 @@ public class LinkControllerBlockEntity extends RandomizableContainerBlockEntity 
 
     public NonNullList<ItemStack> getInventory() {
         return items;
-    }
-
-    public static void tick(Level level, BlockPos blockPos, BlockState state, LinkControllerBlockEntity linkControllerBlockEntity) {
-        if (level.isClientSide()) {
-            return;
-        }
-
     }
 }

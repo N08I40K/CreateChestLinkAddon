@@ -43,27 +43,27 @@ public class LinkControllerBlock extends BaseEntityBlock {
     }
 
     @Override
-    public void wasExploded(Level pLevel, BlockPos pPos, Explosion pExplosion) {
-        onDestroy(pLevel);
-        super.wasExploded(pLevel, pPos, pExplosion);
+    public void wasExploded(Level level, BlockPos pos, Explosion explosion) {
+        onDestroy(level);
+        super.wasExploded(level, pos, explosion);
     }
 
     /* BlockEntity */
 
     @Override
-    public RenderShape getRenderShape(BlockState pState) {
+    public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }
 
     @Override
-    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-        if (pLevel.isClientSide) {
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         } else {
-            BlockEntity blockentity = pLevel.getBlockEntity(pPos);
+            BlockEntity blockentity = level.getBlockEntity(pos);
             if (blockentity instanceof LinkControllerBlockEntity) {
-                pPlayer.openMenu((LinkControllerBlockEntity)blockentity);
-                pPlayer.awardStat(Stats.OPEN_CHEST);
+                player.openMenu((LinkControllerBlockEntity)blockentity);
+                player.awardStat(Stats.OPEN_CHEST);
             }
 
             return InteractionResult.CONSUME;
@@ -71,27 +71,21 @@ public class LinkControllerBlock extends BaseEntityBlock {
     }
 
     @Override
-    public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pIsMoving) {
-        if (!pState.is(pNewState.getBlock())) {
-            BlockEntity blockentity = pLevel.getBlockEntity(pPos);
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!state.is(newState.getBlock())) {
+            BlockEntity blockentity = level.getBlockEntity(pos);
             if (blockentity instanceof Container) {
-                Containers.dropContents(pLevel, pPos, (Container)blockentity);
-                pLevel.updateNeighbourForOutputSignal(pPos, this);
+                Containers.dropContents(level, pos, (Container)blockentity);
+                level.updateNeighbourForOutputSignal(pos, this);
             }
 
-            super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
+            super.onRemove(state, level, pos, newState, isMoving);
         }
     }
 
     @Nullable
     @Override
-    public BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) {
-        return new LinkControllerBlockEntity(pPos, pState);
-    }
-
-    @Nullable
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> pBlockEntityType) {
-        return createTickerHelper(pBlockEntityType, ModBlockEntities.LINK_CONTROLLER.get(), LinkControllerBlockEntity::tick);
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new LinkControllerBlockEntity(pos, state);
     }
 }

@@ -24,9 +24,6 @@ public abstract class ChestBlockEntityMixin implements IChestBlockEntity {
     private NonNullList<ItemStack> items;
 
     @Unique
-    boolean isInventoryLinked = false;
-
-    @Unique
     private NonNullList<ItemStack> linkedInventory = null;
 
     @Unique
@@ -35,44 +32,43 @@ public abstract class ChestBlockEntityMixin implements IChestBlockEntity {
     @Unique
     boolean isLoaded = false;
 
+    @Unique
+    public void clearInventory() {
+        items = NonNullList.withSize(27, ItemStack.EMPTY);
+    }
 
 
+    // Interface functions
+
+    @Override
     public UUID getLinkedControllerUuid() {
         return linkedControllerUuid;
     }
 
+    @Override
     public void setLinkedControllerUuid(UUID uuid) {
         this.linkedControllerUuid = uuid;
     }
 
-    public boolean hasLinkedController() {
+    @Override
+    public boolean hasLinkedControllerUuid() {
         return linkedControllerUuid != null;
-    }
-
-    @Unique
-    public void createChestLinkAddon$clearInventory() {
-        items = NonNullList.withSize(27, ItemStack.EMPTY);
     }
 
     @Override
     public void linkInventory() {
-        if (!LOADED_CHESTS.contains(this)) {
-//            System.out.println("Added to loaded chests!");
+        if (!LOADED_CHESTS.contains(this))
             LOADED_CHESTS.add(this);
-        } else {
-//            System.out.println("Already in loaded chests!");
-        }
 
         LinkControllerBlockEntity.LOADED_CONTROLLERS.removeIf(Objects::isNull);
 
         for (LinkControllerBlockEntity linkControllerBlockEntity : LinkControllerBlockEntity.LOADED_CONTROLLERS) {
-            if (linkControllerBlockEntity.getUuid().equals(linkedControllerUuid)) {
-//                System.out.println("Required link controller has been founded!");
-                createChestLinkAddon$clearInventory();
-                linkedInventory = linkControllerBlockEntity.getInventory();
-                isInventoryLinked = true;
-                break;
-            }
+            if (!linkControllerBlockEntity.getUuid().equals(linkedControllerUuid))
+                continue;
+
+            clearInventory();
+            linkedInventory = linkControllerBlockEntity.getInventory();
+            break;
         }
     }
 
@@ -81,7 +77,6 @@ public abstract class ChestBlockEntityMixin implements IChestBlockEntity {
         if (removeFromList)
             LOADED_CHESTS.remove(this);
 
-        isInventoryLinked = false;
         linkedInventory = null;
     }
 
@@ -92,37 +87,32 @@ public abstract class ChestBlockEntityMixin implements IChestBlockEntity {
         linkedControllerUuid = null;
     }
 
+    // Mixin functions
+
     @Inject(method = "getItems", at = @At("HEAD"), cancellable = true)
     protected void myGetInvStackList(CallbackInfoReturnable<NonNullList<ItemStack>> cir) {
-        if (!isInventoryLinked) {
+        if (linkedInventory == null)
             return;
-        }
-        if (linkedInventory == null) {
-            isInventoryLinked = false;
-            return;
-        }
+
         cir.setReturnValue(linkedInventory);
         cir.cancel();
     }
 
     @Inject(method = "load", at = @At("RETURN"))
-    public void myLoad(CompoundTag pTag, CallbackInfo cir) {
+    public void myLoad(CompoundTag nbt, CallbackInfo cir) {
         if (isLoaded) return;
         isLoaded = true;
 
-        if (pTag.contains("controller-uuid")) {
-            linkedControllerUuid = pTag.getUUID("controller-uuid");
+        if (!nbt.contains("controller-uuid"))
+            return;
 
-            if (isLoaded) {
-//                System.out.println("Link inventory (chest load)!");
-                linkInventory();
-            }
-        }
+        linkedControllerUuid = nbt.getUUID("controller-uuid");
+        linkInventory();
     }
 
     @Inject(method = "saveAdditional", at = @At("HEAD"))
-    protected void mySaveAdditional(CompoundTag pTag, CallbackInfo cir) {
-        if (linkedControllerUuid != null)
-            pTag.putUUID("controller-uuid", linkedControllerUuid);
+    protected void mySaveAdditional(CompoundTag nbt, CallbackInfo cir) {
+        if (hasLinkedControllerUuid())
+            nbt.putUUID("controller-uuid", linkedControllerUuid);
     }
 }

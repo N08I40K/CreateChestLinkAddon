@@ -9,7 +9,6 @@ public interface IMountedStorage {
     static List<IMountedStorage> LOADED_STORAGES = new ArrayList<>();
 
     UUID getLinkedControllerUuid();
-
     void setLinkedControllerUuid(UUID uuid);
 
     void linkInventory();

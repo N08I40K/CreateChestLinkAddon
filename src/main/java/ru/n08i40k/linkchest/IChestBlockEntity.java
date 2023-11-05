@@ -10,7 +10,7 @@ public interface IChestBlockEntity {
 
     UUID getLinkedControllerUuid();
     void setLinkedControllerUuid(UUID uuid);
-    boolean hasLinkedController();
+    boolean hasLinkedControllerUuid();
 
     void linkInventory();
     void unlinkInventory(boolean removeFromList);
