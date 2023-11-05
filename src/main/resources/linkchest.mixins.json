@@ -4,7 +4,6 @@
   "package": "ru.n08i40k.linkchest.mixin",
   "compatibilityLevel": "JAVA_16",
   "refmap": "linkchest.refmap.json",
-  "plugin": "ru.n08i40k.linkchest.MixinPlugin",
   "mixins": [
     "BlockEntityAccessor",
     "ChestBlockEntityMixin",
